@@ -641,6 +641,33 @@
         .modal-btn:active {
             transform: scale(0.96);
         }
+
+        /* Floating WhatsApp Button */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            background: #25d366;
+            color: white;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+            z-index: 1900;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+        }
+        .whatsapp-float:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -748,6 +775,39 @@
             <h3>Party Drinks Grid</h3>
             <p>Cool beverages & soda packs</p>
             <span class="badge">Buy 1 Get 1</span>
+        </div>
+    </div>
+
+    <!-- Beautiful Category Cards Grid -->
+    <div class="section-title">Explore Categories</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; padding:0 20px 10px;">
+        <div style="background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #bbf7d0; border-radius:18px; padding:18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s;" onclick="loadCategory('Fruits and Vegetables')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <div>
+                <h4 style="font-size:14px; font-weight:800; color:#166534; line-height:1.2;">Fresh Veggies<br>& Fruits</h4>
+                <p style="font-size:10px; font-weight:600; color:#15803d; margin-top:2px;">Upto 40% Off</p>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/3194/3194591.png" style="width:40px; height:40px; object-fit:contain;">
+        </div>
+        <div style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius:18px; padding:18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s;" onclick="loadCategory('Grocery & Kitchen')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <div>
+                <h4 style="font-size:14px; font-weight:800; color:#92400e; line-height:1.2;">Grocery &<br>Kitchen</h4>
+                <p style="font-size:10px; font-weight:600; color:#b45309; margin-top:2px;">Daily Essentials</p>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/6888/6888125.png" style="width:40px; height:40px; object-fit:contain;">
+        </div>
+        <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1.5px solid #bfdbfe; border-radius:18px; padding:18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s;" onclick="loadCategory('Household Essentials')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <div>
+                <h4 style="font-size:14px; font-weight:800; color:#1e40af; line-height:1.2;">Dairy, Bread<br>& Eggs</h4>
+                <p style="font-size:10px; font-weight:600; color:#1d4ed8; margin-top:2px;">Farm Fresh</p>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/3753/3753696.png" style="width:40px; height:40px; object-fit:contain;">
+        </div>
+        <div style="background:linear-gradient(135deg, #fff5f5 0%, #fee2e2 100%); border: 1.5px solid #fecaca; border-radius:18px; padding:18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:0.2s;" onclick="loadCategory('Snacks & Drinks')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <div>
+                <h4 style="font-size:14px; font-weight:800; color:#991b1b; line-height:1.2;">Snacks &<br>Beverages</h4>
+                <p style="font-size:10px; font-weight:600; color:#b91c1c; margin-top:2px;">Instant Treats</p>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/2738/2738730.png" style="width:40px; height:40px; object-fit:contain;">
         </div>
     </div>
 
@@ -981,5 +1041,8 @@
         }
     }
 </script>
+<a href="https://wa.me/919660686394?text=Hello%20SEVZO%20Support!%20I%20need%20help%20with%20my%20order." target="_blank" class="whatsapp-float">
+    <i class="fab fa-whatsapp"></i>
+</a>
 </body>
 </html>

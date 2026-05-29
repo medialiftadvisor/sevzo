@@ -208,6 +208,8 @@
     let editId = 0;
     let globalOrders = [];
     let globalRiders = [];
+    let globalUsers = [];
+    let globalProducts = [];
 
     // Session Check
     if (localStorage.getItem('sevzo_admin_logged') === 'true') {
@@ -286,7 +288,8 @@
         btnBox.innerHTML = '';
 
         if(tab === 'products') {
-            btnBox.innerHTML = `<button class="btn btn-add" onclick="openProductModal(null)">+ Add New Product</button>`;
+            globalProducts = d.products;
+            btnBox.innerHTML = `<button class="btn btn-add" onclick="openProductModal(0)">+ Add New Product</button>`;
             table.innerHTML = `<tr><th>Img</th><th>Name</th><th>Category</th><th>Price</th><th>Brand</th><th>Action</th></tr>` + 
             d.products.map(p => `<tr>
                 <td><img src="${p.image_url}" width="35" height="35" style="object-fit:contain; border-radius:6px;"></td>
@@ -295,7 +298,7 @@
                 <td>₹${p.price}</td>
                 <td>${p.brand ? p.brand : 'SEVZO'}</td>
                 <td>
-                    <button class="btn btn-edit" onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Edit</button>
+                    <button class="btn btn-edit" onclick='openProductModal(${p.id})'>Edit</button>
                     <button class="btn btn-del" onclick="deleteItem('product', ${p.id})">Del</button>
                 </td>
             </tr>`).join('');
@@ -334,12 +337,14 @@
             }).join('');
         }
         if(tab === 'users') {
-            table.innerHTML = `<tr><th>Name</th><th>Phone</th><th>Wallet Balance</th><th>Action</th></tr>` + 
+            globalUsers = d.users;
+            table.innerHTML = `<tr><th>Name</th><th>Phone</th><th>Password</th><th>Wallet Balance</th><th>Action</th></tr>` + 
             d.users.map(u => `<tr>
                 <td><b>${u.name}</b></td>
                 <td>+91 ${u.phone}</td>
+                <td><code>${u.password}</code></td>
                 <td><b style="color:var(--green)">₹${parseFloat(u.wallet).toFixed(2)}</b></td>
-                <td><button class="btn btn-edit" onclick='openWalletModal(${JSON.stringify(u)})'>Update Wallet</button></td>
+                <td><button class="btn btn-edit" onclick='openUserModal(${u.id})'>Edit Customer</button></td>
             </tr>`).join('');
         }
         if(tab === 'riders') {
@@ -354,14 +359,16 @@
         }
     }
 
-    function openProductModal(p) {
-        editId = p ? p.id : 0;
+    function openProductModal(id) {
+        editId = id;
+        const p = id > 0 ? globalProducts.find(x => x.id == id) : null;
         document.getElementById('modal-overlay').style.display = 'flex';
         document.getElementById('modal-title').innerText = p ? "Edit SEVZO Product" : "Add New SEVZO Product";
         document.getElementById('modal-body').innerHTML = `
             <label>Product Name</label><input type="text" id="m-name" class="input-box" value="${p?p.name:''}">
             <label>Price (₹)</label><input type="number" id="m-price" class="input-box" value="${p?p.price:''}">
             <label>Image URL</label><input type="text" id="m-img" class="input-box" value="${p?p.image_url:''}">
+            <label>Gallery Image URLs (Separated by semicolon ';')</label><input type="text" id="m-images" class="input-box" placeholder="url1; url2; url3" value="${p && p.images ? p.images : ''}">
             <label>Category</label>
             <select id="m-cat" class="input-box">
                 <option value="Fruits and Vegetables" ${p && p.category=='Fruits and Vegetables'?'selected':''}>Fruits & Veggies</option>
@@ -377,11 +384,17 @@
         `;
     }
 
-    function openWalletModal(u) {
-        editId = u.id;
+    function openUserModal(id) {
+        editId = id;
+        const u = globalUsers.find(x => x.id == id);
         document.getElementById('modal-overlay').style.display = 'flex';
-        document.getElementById('modal-title').innerText = "Adjust Customer Wallet: " + u.name;
-        document.getElementById('modal-body').innerHTML = `<label>Current Wallet Balance (₹)</label><input type="number" id="m-wallet" class="input-box" value="${u.wallet}">`;
+        document.getElementById('modal-title').innerText = "Edit Customer: " + u.name;
+        document.getElementById('modal-body').innerHTML = `
+            <label>Customer Name</label><input type="text" id="m-u-name" class="input-box" value="${u.name}">
+            <label>Phone Number</label><input type="text" id="m-u-phone" class="input-box" value="${u.phone}">
+            <label>Password</label><input type="text" id="m-u-pass" class="input-box" value="${u.password}">
+            <label>Wallet Balance (₹)</label><input type="number" id="m-u-wallet" class="input-box" value="${u.wallet}">
+        `;
     }
 
     function viewOrderDetails(id) {
@@ -410,20 +423,27 @@
                 name: document.getElementById('m-name').value, 
                 price: document.getElementById('m-price').value,
                 image_url: document.getElementById('m-img').value, 
+                images: document.getElementById('m-images').value, 
                 category: document.getElementById('m-cat').value, 
                 available_pincodes: document.getElementById('m-pin').value,
                 brand: document.getElementById('m-brand').value,
                 description: document.getElementById('m-desc').value,
                 highlights: document.getElementById('m-highlights').value
             });
-        } else if(document.getElementById('m-wallet')) {
-            res = await req('update_wallet', { id: editId, wallet: document.getElementById('m-wallet').value });
+        } else if(currentTab === 'users') {
+            res = await req('save_user', {
+                id: editId,
+                name: document.getElementById('m-u-name').value,
+                phone: document.getElementById('m-u-phone').value,
+                password: document.getElementById('m-u-pass').value,
+                wallet: document.getElementById('m-u-wallet').value
+            });
         }
-        if(res.status === 'success') { 
+        if(res && res.status === 'success') { 
             closeModal(); 
             fetchData(currentTab); 
         } else {
-            alert("Error: " + res.message);
+            alert("Error: " + (res ? res.message : "Unknown error"));
         }
     }
 

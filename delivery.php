@@ -148,6 +148,9 @@
             <i class="fas fa-phone-alt"></i> Phone: +91 <span id="det-phone">Phone</span><br><br>
             <i class="fas fa-map-marker-alt" style="color: var(--secondary);"></i> Destination: <span id="det-address">Full Address</span><br>
             <b>Pincode:</b> <span id="det-pin">000000</span>
+            <div id="det-items-box" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gray-light); font-size: 13px;">
+                <!-- Filled dynamically -->
+            </div>
         </div>
         
         <div id="nav-btn-container"></div>
@@ -156,7 +159,20 @@
             <p style="font-size: 13px; color: #64748b; margin-bottom: 10px; font-weight: 700;">Ask customer for 4-digit Security PIN</p>
             <input type="number" id="delivery-pin-input" placeholder="Enter PIN (e.g. 5621)" class="input-box" style="text-align:center; font-size: 20px; letter-spacing: 5px; font-weight:bold; margin-bottom: 0;">
         </div>
-        <button class="btn-main btn-deliver" onclick="markDelivered()">Verify PIN & Deliver Package</button>
+
+        <!-- Delivery Proof Photo Section -->
+        <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1.5px solid var(--gray-light); margin-bottom: 15px; text-align:center;">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 700;">Upload Delivery Proof Photo (Required)</p>
+            <input type="file" id="delivery-proof-upload" accept="image/*" style="display:none;" onchange="handleDeliveryProof(event)">
+            
+            <div id="proof-preview-container" onclick="document.getElementById('delivery-proof-upload').click()" style="width:100%; height:120px; border:2px dashed #cbd5e1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:#f8fafc; transition: 0.3s;">
+                <i class="fas fa-camera" style="font-size:24px; color:#94a3b8; margin-bottom:6px;"></i>
+                <span id="proof-preview-text" style="font-size:12px; color:#64748b; font-weight:600;">Tap to open camera / upload photo</span>
+                <img id="proof-preview-img" style="width:100%; height:100%; object-fit:cover; display:none;">
+            </div>
+        </div>
+
+        <button id="btn-final-deliver" class="btn-main btn-deliver" onclick="markDelivered()" disabled style="opacity:0.5; cursor:not-allowed;">Verify PIN & Deliver Package</button>
     </div>
 </div>
 
@@ -164,6 +180,8 @@
     let rider = JSON.parse(localStorage.getItem('qm_rider'));
     let isOnline = false, pollInterval = null, knownOrderIds = []; 
     let currentLat = null, currentLng = null, watchId = null;
+    let globalActiveOrders = [];
+    let deliveryProofBase64 = null;
 
     window.onload = () => {
         if(!rider) { 
@@ -364,18 +382,32 @@
     }
 
     function renderActiveOrders(orders) {
+        globalActiveOrders = orders;
         const list = document.getElementById('list-active');
         if(orders.length > 0) {
-            list.innerHTML = orders.map(o => `
-                <div class="order-card active-card">
-                    <b style="color:var(--green);"><i class="fas fa-spinner fa-spin"></i> Active shipment: #SEVZO-${o.id}</b>
-                    <h3 style="margin: 8px 0; font-size: 18px; font-weight:800;">Collect ₹${o.total_amount}</h3>
-                    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight:600;"><i class="fas fa-user"></i> Customer: ${o.receiver_name ? o.receiver_name : o.customer_name}</p>
-                    <button class="btn-action btn-deliver" onclick='openMap(${JSON.stringify(o).replace(/'/g, "\\'")})'>
-                        <i class="fas fa-location-arrow"></i> Navigate & Verify PIN
-                    </button>
-                </div>
-            `).join('');
+            list.innerHTML = orders.map(o => {
+                const itemsHtml = o.items ? `
+                    <div style="margin: 8px 0 12px; font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #cbd5e1; text-align:left;">
+                        <span style="font-weight:700; display:block; margin-bottom:4px; color:var(--primary);"><i class="fas fa-shopping-basket"></i> Package Items:</span>
+                        ${o.items.map(item => `<div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                            <span>${item.product_name}</span>
+                            <b>x${item.quantity}</b>
+                        </div>`).join('')}
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="order-card active-card">
+                        <b style="color:var(--green);"><i class="fas fa-spinner fa-spin"></i> Active shipment: #SEVZO-${o.id}</b>
+                        <h3 style="margin: 8px 0; font-size: 18px; font-weight:800;">Collect ₹${o.total_amount}</h3>
+                        ${itemsHtml}
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight:600;"><i class="fas fa-user"></i> Customer: ${o.receiver_name ? o.receiver_name : o.customer_name}</p>
+                        <button class="btn-action btn-deliver" onclick='openMap(${o.id})'>
+                            <i class="fas fa-location-arrow"></i> Navigate & Verify PIN
+                        </button>
+                    </div>
+                `;
+            }).join('');
         } else { 
             list.innerHTML = "<p style='text-align:center; padding:40px 20px; color:#94a3b8; font-weight:600;'>No active shipments. Accept a new order!</p>"; 
         }
@@ -405,17 +437,51 @@
 
     /* --- MAP & DELIVERY --- */
     let currentTrackOrder = null;
-    function openMap(order) {
+    function openMap(orderId) {
+        const order = globalActiveOrders.find(x => x.id == orderId);
         currentTrackOrder = order; 
         document.getElementById('map-overlay').style.display = 'flex'; 
         document.getElementById('delivery-pin-input').value = '';
         
+        // Reset delivery proof
+        deliveryProofBase64 = null;
+        document.getElementById('delivery-proof-upload').value = '';
+        const previewImg = document.getElementById('proof-preview-img');
+        const previewText = document.getElementById('proof-preview-text');
+        const previewIcon = document.querySelector('#proof-preview-container i');
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+        }
+        if (previewText) previewText.style.display = 'block';
+        if (previewIcon) previewIcon.style.display = 'block';
+        
+        const btn = document.getElementById('btn-final-deliver');
+        if (btn) {
+            btn.setAttribute('disabled', 'true');
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+
         document.getElementById('det-amount').innerText = order.total_amount; 
         document.getElementById('det-name').innerText = order.receiver_name ? order.receiver_name : order.customer_name;
         document.getElementById('det-phone').innerText = order.customer_phone; 
         document.getElementById('det-address').innerText = `${order.house_no || ''}, ${order.full_address || order.delivery_address}`;
         document.getElementById('det-pin').innerText = order.pincode ? order.pincode : 'N/A';
         
+        // Dynamic items display
+        if (order.items && order.items.length > 0) {
+            document.getElementById('det-items-box').innerHTML = `
+                <b style="color:var(--primary);"><i class="fas fa-shopping-basket"></i> Items in Package:</b>
+                <ul style="padding-left:15px; margin-top:4px; text-align:left;">
+                    ${order.items.map(item => `<li>${item.product_name} (x${item.quantity})</li>`).join('')}
+                </ul>
+            `;
+            document.getElementById('det-items-box').style.display = 'block';
+        } else {
+            document.getElementById('det-items-box').style.display = 'none';
+        }
+
         let destLat = order.lat ? order.lat : 26.8924; 
         let destLng = order.lng ? order.lng : 75.8073; 
 
@@ -436,15 +502,51 @@
 
     function closeMap() { document.getElementById('map-overlay').style.display = 'none'; }
     
+    function handleDeliveryProof(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            deliveryProofBase64 = reader.result;
+            
+            // Update preview UI
+            const previewImg = document.getElementById('proof-preview-img');
+            const previewText = document.getElementById('proof-preview-text');
+            const previewIcon = document.querySelector('#proof-preview-container i');
+            
+            if (previewImg) {
+                previewImg.src = deliveryProofBase64;
+                previewImg.style.display = 'block';
+            }
+            if (previewText) previewText.style.display = 'none';
+            if (previewIcon) previewIcon.style.display = 'none';
+            
+            // Enable button
+            const btn = document.getElementById('btn-final-deliver');
+            if (btn) {
+                btn.removeAttribute('disabled');
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
     async function markDelivered() {
         const pinValue = document.getElementById('delivery-pin-input').value;
         if(!pinValue) return alert("Please enter the customer PIN.");
+        if(!deliveryProofBase64) return alert("Please upload/capture a delivery proof photo first!");
         
         try {
             const res = await fetch('delivery_api.php', { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ action: 'complete_order', order_id: currentTrackOrder.id, pin: pinValue }) 
+                body: JSON.stringify({ 
+                    action: 'complete_order', 
+                    order_id: currentTrackOrder.id, 
+                    pin: pinValue,
+                    delivery_proof: deliveryProofBase64 
+                }) 
             });
             const d = await res.json();
             if(d.status === 'success') { 
@@ -455,7 +557,7 @@
                 alert(d.message); 
             }
         } catch(e) {
-            alert("Connection error marked delivered.");
+            alert("Connection error marking order delivered.");
         }
     }
 

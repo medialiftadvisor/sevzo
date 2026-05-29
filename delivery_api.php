@@ -106,6 +106,13 @@ try {
             $stmt->execute([$partner_id]);
             $activeOrders = $stmt->fetchAll();
 
+            // Fetch order items for each active order
+            foreach ($activeOrders as &$ao) {
+                $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+                $stmtItems->execute([$ao['id']]);
+                $ao['items'] = $stmtItems->fetchAll();
+            }
+
             echo json_encode([
                 "status" => "success",
                 "new_orders" => $newOrders,
@@ -134,14 +141,15 @@ try {
         case 'complete_order':
             $order_id = (int)$data['order_id'];
             $pin = trim($data['pin']);
+            $delivery_proof = isset($data['delivery_proof']) ? $data['delivery_proof'] : null;
 
             $stmt = $pdo->prepare("SELECT delivery_pin FROM orders WHERE id = ?");
             $stmt->execute([$order_id]);
             $ord = $stmt->fetch();
 
             if ($ord && $ord['delivery_pin'] === $pin) {
-                $stmt = $pdo->prepare("UPDATE orders SET order_status = 'Delivered' WHERE id = ?");
-                $stmt->execute([$order_id]);
+                $stmt = $pdo->prepare("UPDATE orders SET order_status = 'Delivered', delivery_proof = ? WHERE id = ?");
+                $stmt->execute([$delivery_proof, $order_id]);
                 echo json_encode(["status" => "success", "message" => "Delivery marked as complete."]);
             } else {
                 echo json_encode(["status" => "error", "message" => "Incorrect security PIN. Please verify with the customer."]);

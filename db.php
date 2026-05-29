@@ -20,6 +20,27 @@ $options = [
 
 try {
      $pdo = new PDO($dsn, $user, $pass, $options);
+     
+     // Auto-migrations for updates
+     try {
+         $pdo->exec("ALTER TABLE `products` ADD COLUMN `images` TEXT DEFAULT NULL AFTER `image_url`;");
+     } catch (\Exception $e) {}
+     
+     try {
+         $pdo->exec("ALTER TABLE `products` ADD COLUMN `brand` VARCHAR(100) DEFAULT 'SEVZO Fresh' AFTER `available_pincodes`;");
+     } catch (\Exception $e) {}
+     
+     try {
+         $pdo->exec("ALTER TABLE `products` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `brand`;");
+     } catch (\Exception $e) {}
+     
+     try {
+         $pdo->exec("ALTER TABLE `products` ADD COLUMN `highlights` TEXT DEFAULT NULL AFTER `description`;");
+     } catch (\Exception $e) {}
+     
+     try {
+         $pdo->exec("ALTER TABLE `orders` ADD COLUMN `delivery_proof` LONGTEXT DEFAULT NULL AFTER `delivery_partner_id`;");
+     } catch (\Exception $e) {}
 } catch (\PDOException $e) {
      // If database doesn't exist yet, we can connect without db name to help initialize it if needed.
      try {

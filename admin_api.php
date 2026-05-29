@@ -61,9 +61,21 @@ try {
             break;
 
         case 'get_users':
-            $stmt = $pdo->query("SELECT id, name, phone, wallet FROM users ORDER BY id DESC");
+            $stmt = $pdo->query("SELECT id, name, phone, wallet, password FROM users ORDER BY id DESC");
             $users = $stmt->fetchAll();
             echo json_encode(["status" => "success", "users" => $users]);
+            break;
+
+        case 'save_user':
+            $id = (int)$data['id'];
+            $name = trim($data['name']);
+            $phone = trim($data['phone']);
+            $password = trim($data['password']);
+            $wallet = (float)$data['wallet'];
+
+            $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, password = ?, wallet = ? WHERE id = ?");
+            $stmt->execute([$name, $phone, $password, $wallet, $id]);
+            echo json_encode(["status" => "success", "message" => "Customer details updated successfully."]);
             break;
 
         case 'get_riders':
@@ -77,17 +89,21 @@ try {
             $name = trim($data['name']);
             $price = (float)$data['price'];
             $image_url = trim($data['image_url']);
+            $images = isset($data['images']) ? trim($data['images']) : '';
             $category = trim($data['category']);
             $available_pincodes = trim($data['available_pincodes']);
+            $brand = isset($data['brand']) ? trim($data['brand']) : 'SEVZO Fresh';
+            $description = isset($data['description']) ? trim($data['description']) : '';
+            $highlights = isset($data['highlights']) ? trim($data['highlights']) : '';
 
             if ($id > 0) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE products SET name = ?, price = ?, image_url = ?, category = ?, available_pincodes = ? WHERE id = ?");
-                $stmt->execute([$name, $price, $image_url, $category, $available_pincodes, $id]);
+                $stmt = $pdo->prepare("UPDATE products SET name = ?, price = ?, image_url = ?, images = ?, category = ?, available_pincodes = ?, brand = ?, description = ?, highlights = ? WHERE id = ?");
+                $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights, $id]);
             } else {
                 // Insert
-                $stmt = $pdo->prepare("INSERT INTO products (name, price, image_url, category, available_pincodes) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $price, $image_url, $category, $available_pincodes]);
+                $stmt = $pdo->prepare("INSERT INTO products (name, price, image_url, images, category, available_pincodes, brand, description, highlights) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights]);
             }
             echo json_encode(["status" => "success", "message" => "Product saved successfully."]);
             break;

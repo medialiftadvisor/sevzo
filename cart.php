@@ -134,6 +134,51 @@
         .place-btn:active { transform: translateY(0); }
         .place-btn:disabled { background: #cbd5e1; box-shadow: none; transform: none; color: #94a3b8; cursor: not-allowed; }
 
+        /* Modal dialog settings */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: var(--white);
+            width: 100%;
+            max-width: 480px;
+            padding: 30px 25px;
+            border-radius: 30px 30px 0 0;
+            text-align: center;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(59,0,104,0.15);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
@@ -149,50 +194,64 @@
     </div>
 
     <div class="container">
-        <!-- Address Card -->
-        <div class="card">
-            <h4><i class="fas fa-map-marker-alt"></i> Delivering to</h4>
-            <div id="addr-text" style="font-size: 13px; color: #475569; line-height: 1.5; font-weight: 600;">
-                <i class="fas fa-spinner fa-spin"></i> Loading address...
+        <!-- Empty Cart Container -->
+        <div id="empty-cart-container" style="display:none; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center; animation: fadeInUp 0.4s ease-out;">
+            <div style="background:#fff0f5; width:95px; height:95px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px; border:2.5px dashed var(--secondary);">
+                <i class="fas fa-shopping-basket" style="font-size:36px; color:var(--secondary);"></i>
             </div>
+            <h2 style="font-weight:900; font-size:20px; color:var(--primary); margin-bottom:8px;">Your Basket is Empty</h2>
+            <p style="color:#64748b; font-size:13px; font-weight:600; line-height:1.5; margin-bottom:25px; max-width:85%;">Add some fresh items to your basket to start your ultra-fast 15-minute delivery!</p>
+            <button onclick="window.location.href='index.html'" style="background:var(--primary); color:white; border:none; padding:15px 30px; border-radius:14px; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 4px 12px rgba(59,0,104,0.15); transition:0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='none'">
+                <i class="fas fa-store" style="margin-right:6px;"></i> Shop Fresh Items
+            </button>
         </div>
 
-        <!-- Order Summary Card -->
-        <div class="card">
-            <h4><i class="fas fa-shopping-bag"></i> Order Summary</h4>
-            <div id="cart-list"></div>
-        </div>
-
-        <!-- Payment Card -->
-        <div class="card">
-            <h4><i class="fas fa-credit-card"></i> Payment Method</h4>
-            <div class="pay-option active" id="opt-wallet" onclick="selectPay('Wallet')">
-                <i class="fas fa-wallet" style="color: #10b981;"></i>
-                <div style="flex:1; font-size:13px; font-weight:600;">
-                    <b style="font-size:14px;">SEVZO Wallet</b><br>
-                    <span id="wallet-amt" style="color:#64748b;">Loading balance...</span>
+        <div id="checkout-container">
+            <!-- Address Card -->
+            <div class="card">
+                <h4><i class="fas fa-map-marker-alt"></i> Delivering to</h4>
+                <div id="addr-text" style="font-size: 13px; color: #475569; line-height: 1.5; font-weight: 600;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading address...
                 </div>
-                <i class="fas fa-check-circle check-icon" id="wallet-check" style="color: var(--secondary);"></i>
             </div>
-            <div class="pay-option" id="opt-upi" onclick="selectPay('UPI')">
-                <i class="fas fa-mobile-alt" style="color: #3b82f6;"></i>
-                <div style="flex:1; font-size:13px; font-weight:600;">
-                    <b style="font-size:14px;">UPI Apps</b><br>
-                    <span style="color:#64748b;">Pay via PhonePe, GPay, Paytm</span>
-                </div>
-                <i class="fas fa-chevron-right" id="upi-arrow" style="color: #cbd5e1;"></i>
-            </div>
-            <div id="insufficient-warning" style="display:none; color:var(--secondary); font-size:12px; font-weight:700; margin-top:8px; text-align:center;">
-                ⚠️ Insufficient balance! Please recharge in your Account section.
-            </div>
-        </div>
 
-        <!-- Bill Details Card -->
-        <div class="card">
-            <div class="bill-row"><span>Items Subtotal</span><span id="sub-total">₹0</span></div>
-            <div class="bill-row"><span>Delivery Partner Fee</span><span style="color: #10b981;">₹25</span></div>
-            <div class="bill-row"><span>Order Handling Fee</span><span>₹5</span></div>
-            <div class="bill-row grand-total"><span>Total Payable</span><span id="grand-total">₹0</span></div>
+            <!-- Order Summary Card -->
+            <div class="card">
+                <h4><i class="fas fa-shopping-bag"></i> Order Summary</h4>
+                <div id="cart-list"></div>
+            </div>
+
+            <!-- Payment Card -->
+            <div class="card">
+                <h4><i class="fas fa-credit-card"></i> Payment Method</h4>
+                <div class="pay-option active" id="opt-wallet" onclick="selectPay('Wallet')">
+                    <i class="fas fa-wallet" style="color: #10b981;"></i>
+                    <div style="flex:1; font-size:13px; font-weight:600;">
+                        <b style="font-size:14px;">SEVZO Wallet</b><br>
+                        <span id="wallet-amt" style="color:#64748b;">Loading balance...</span>
+                    </div>
+                    <i class="fas fa-check-circle check-icon" id="wallet-check" style="color: var(--secondary);"></i>
+                </div>
+                <div class="pay-option" id="opt-upi" onclick="selectPay('UPI')">
+                    <i class="fas fa-mobile-alt" style="color: #3b82f6;"></i>
+                    <div style="flex:1; font-size:13px; font-weight:600;">
+                        <b style="font-size:14px;">UPI Apps</b><br>
+                        <span style="color:#64748b;">Pay via PhonePe, GPay, Paytm</span>
+                    </div>
+                    <i class="fas fa-chevron-right" id="upi-arrow" style="color: #cbd5e1;"></i>
+                </div>
+                <div id="insufficient-warning" style="display:none; color:var(--secondary); font-size:12px; font-weight:700; margin-top:8px; text-align:center;">
+                    ⚠️ Insufficient balance! Please recharge in your Account section.
+                </div>
+            </div>
+
+            <!-- Bill Details Card -->
+            <div class="card">
+                <div class="bill-row"><span>Items Subtotal</span><span id="sub-total">₹0</span></div>
+                <div class="bill-row"><span>Delivery Partner Fee</span><span style="color: #10b981;">₹25</span></div>
+                <div class="bill-row"><span>Order Handling Fee</span><span>₹5</span></div>
+                <div class="bill-row grand-total"><span>Total Payable</span><span id="grand-total">₹0</span></div>
+            </div>
         </div>
     </div>
 
@@ -208,6 +267,30 @@
     </div>
 </div>
 
+<!-- Mock UPI QR Code Checkout Modal -->
+<div id="upi-modal" class="modal-overlay" style="align-items: center; z-index:3000;">
+    <div class="modal-content" style="border-radius:24px; max-width:400px; padding:30px; position:relative; margin-bottom:0;">
+        <h3 style="font-weight:900; color:var(--primary); margin-bottom:5px;">Scan UPI QR Code</h3>
+        <p style="font-size:12px; color:#64748b; font-weight:600; margin-bottom:15px;">Amount Payable: <b style="color:var(--secondary);" id="upi-modal-amount">₹0</b></p>
+        
+        <!-- Dynamic QR Code Container -->
+        <div style="background:#f8fafc; border:1.5px solid var(--gray-light); padding:15px; border-radius:18px; display:inline-block; margin-bottom:15px;">
+            <img id="upi-qr-img" src="" style="width:190px; height:190px; object-fit:contain; border-radius:8px;">
+        </div>
+        
+        <p style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:5px;">Merchant UPI VPA: <span style="color:var(--primary);">my1504@ybl</span></p>
+        
+        <div style="background:#fff9e6; color:#b45309; padding:8px 12px; border-radius:10px; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:20px;">
+            <i class="fas fa-spinner fa-spin"></i> Checking confirmation: <span id="upi-timer">02:00</span>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button onclick="verifyUpiPayment()" class="modal-btn" style="flex:1; padding:12px; font-size:13px; background:var(--primary);">I Have Paid</button>
+            <button onclick="closeUpiModal()" class="modal-btn" style="flex:1; padding:12px; font-size:13px; background:#cbd5e1; color:#475569; box-shadow:none;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let products = [];
     let cart = JSON.parse(localStorage.getItem('my_cart')) || {};
@@ -216,6 +299,7 @@
     let dbAddress = null;
     let walletBalance = 0;
     let payableGrandTotal = 0;
+    let upiTimerInterval = null;
 
     window.onload = async () => {
         if(!user) { 
@@ -265,7 +349,7 @@
                     ${dbAddress.house_no}, ${dbAddress.full_address}<br>
                     <span style="color:#64748b">Landmark: ${dbAddress.landmark ? dbAddress.landmark : 'N/A'} | Pin: ${dbAddress.pincode}</span>
                 `;
-                document.getElementById('main-place-btn').disabled = false;
+                if(Object.keys(cart).length > 0) document.getElementById('main-place-btn').disabled = false;
             } else {
                 document.getElementById('addr-text').innerHTML = "<b style='color:var(--secondary)'>No delivery address saved! Please configure your address in the Account section.</b>";
                 document.getElementById('main-place-btn').disabled = true;
@@ -279,10 +363,16 @@
         let html = '';
         
         if(Object.keys(cart).length === 0) {
-            list.innerHTML = "<p style='text-align:center; padding:20px; color:#94a3b8; font-weight:600;'>Your basket is empty!</p>";
+            document.getElementById('checkout-container').style.display = 'none';
+            document.getElementById('empty-cart-container').style.display = 'flex';
+            document.querySelector('.footer').style.display = 'none';
             updateBill(0);
             document.getElementById('main-place-btn').disabled = true;
             return;
+        } else {
+            document.getElementById('checkout-container').style.display = 'block';
+            document.getElementById('empty-cart-container').style.display = 'none';
+            document.querySelector('.footer').style.display = 'flex';
         }
 
         for(let id in cart) {
@@ -342,6 +432,8 @@
         const warning = document.getElementById('insufficient-warning');
         const btn = document.getElementById('main-place-btn');
         
+        if(Object.keys(cart).length === 0) return;
+
         if (selectedMethod === 'Wallet') {
             if (walletBalance < payableGrandTotal && payableGrandTotal > 30) {
                 warning.style.display = 'block';
@@ -392,13 +484,13 @@
             const d = await res.json();
             
             if(d.status === 'success') {
-                localStorage.removeItem('my_cart');
                 if(selectedMethod === 'UPI') {
-                    // Open UPI payment intent
-                    const upi = `upi://pay?pa=sevzo@ybl&pn=SEVZO&am=${payableGrandTotal}&cu=INR&tn=Order_SEVZO_${d.order_id}`;
-                    window.location.href = upi;
-                    setTimeout(() => { window.location.href = 'account.php?tab=orders'; }, 2000);
+                    // Open dynamic QR code modal instead of trying custom app launch
+                    btn.disabled = false;
+                    btn.innerHTML = `Place Order <i class="fas fa-arrow-right"></i>`;
+                    openUpiModal(d.order_id, payableGrandTotal);
                 } else {
+                    localStorage.removeItem('my_cart');
                     alert("🎉 Order placed successfully! Track your delivery now.");
                     window.location.href = 'account.php?tab=orders';
                 }
@@ -412,6 +504,47 @@
             btn.disabled = false;
             btn.innerHTML = `Place Order <i class="fas fa-arrow-right"></i>`;
         }
+    }
+
+    function openUpiModal(orderId, amount) {
+        document.getElementById('upi-modal-amount').innerText = "₹" + amount.toFixed(2);
+        
+        // QR API loading to my1504@ybl merchant UPI ID
+        const upiLink = `upi://pay?pa=my1504@ybl&pn=SEVZO&am=${amount}&cu=INR&tn=Order_SEVZO_${orderId}`;
+        document.getElementById('upi-qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=` + encodeURIComponent(upiLink);
+        
+        document.getElementById('upi-modal').style.display = 'flex';
+        
+        let timeRemaining = 120;
+        document.getElementById('upi-timer').innerText = "02:00";
+        clearInterval(upiTimerInterval);
+        upiTimerInterval = setInterval(() => {
+            timeRemaining--;
+            let mins = Math.floor(timeRemaining / 60);
+            let secs = timeRemaining % 60;
+            document.getElementById('upi-timer').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            if(timeRemaining <= 0) {
+                clearInterval(upiTimerInterval);
+                alert("UPI payment session timed out. Checkout marked pending. Complete inside Account tab.");
+                window.location.href = 'account.php?tab=orders';
+            }
+        }, 1000);
+    }
+
+    function verifyUpiPayment() {
+        clearInterval(upiTimerInterval);
+        document.getElementById('upi-modal').style.display = 'none';
+        localStorage.removeItem('my_cart');
+        alert("🎉 UPI Payment confirmed! Order has been received for 15-minute delivery.");
+        window.location.href = 'account.php?tab=orders';
+    }
+
+    function closeUpiModal() {
+        clearInterval(upiTimerInterval);
+        document.getElementById('upi-modal').style.display = 'none';
+        alert("Payment canceled. You can complete/re-verify this payment inside your account profile orders section.");
+        window.location.href = 'account.php?tab=orders';
     }
 </script>
 </body>
