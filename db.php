@@ -4,6 +4,11 @@ $host = 'localhost';
 $db   = 'sevzo';
 $user = 'root';
 $pass = '';
+
+// Load production configuration if exists
+if (file_exists(__DIR__ . '/config.php')) {
+    include __DIR__ . '/config.php';
+}
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
