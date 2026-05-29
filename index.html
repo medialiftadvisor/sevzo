@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SEVZO | Instant Delivery</title>
+    
+    <!-- Google Fonts for Premium Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #3b0068;
+            --secondary: #ff005c;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --dark: #0f172a;
+            --gray-light: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            color: var(--dark);
+            padding-bottom: 90px;
+        }
+        
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--white);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+        
+        /* Premium Header */
+        .top-header {
+            padding: 15px 20px 10px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .brand-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .brand-title span {
+            color: var(--secondary);
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .location-info:active {
+            transform: scale(0.97);
+        }
+        
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .wallet-badge {
+            background: #fff0f5;
+            color: var(--secondary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #fce7f3;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .wallet-badge:active {
+            transform: scale(0.95);
+        }
+
+        .profile-icon {
+            font-size: 28px;
+            color: var(--dark);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .profile-icon:hover {
+            color: var(--primary);
+        }
+
+        /* Modern Search Bar */
+        .search-box {
+            position: relative;
+            margin-top: 8px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 15px 14px 46px;
+            border: 1.5px solid var(--gray-light);
+            border-radius: 14px;
+            background: #f8fafc;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 8px 20px rgba(59, 0, 104, 0.06);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 18px;
+            top: 17px;
+            color: #94a3b8;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .search-box input:focus + i {
+            color: var(--primary);
+        }
+
+        /* PREMIUM IMAGE SLIDER */
+        .slider-container {
+            margin: 15px 20px;
+            border-radius: 18px;
+            overflow: hidden;
+            position: relative;
+            height: 140px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .slider-wrapper {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            padding: 20px 25px;
+            color: var(--white);
+        }
+
+        .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(59, 0, 104, 0.85) 40%, rgba(255, 0, 92, 0.3) 100%);
+            z-index: 1;
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 2;
+            max-width: 70%;
+        }
+
+        .slide-tag {
+            background: var(--secondary);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        .slide-title {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .slide-desc {
+            font-size: 11px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        /* Slider Controls */
+        .slider-dots {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: var(--white);
+            transform: scale(1.2);
+            width: 14px;
+            border-radius: 4px;
+        }
+
+        /* Dynamic Category List */
+        .section-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 20px 20px 10px;
+            letter-spacing: -0.3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title span {
+            font-size: 12px;
+            color: var(--secondary);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        
+        .cat-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 0 20px 5px;
+            scrollbar-width: none;
+            scroll-behavior: smooth;
+        }
+        .cat-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .cat-row {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .cat-box {
+            text-align: center;
+            cursor: pointer;
+            width: 76px;
+            flex-shrink: 0;
+        }
+
+        .cat-img-wrapper { 
+            border-radius: 18px;
+            height: 72px;
+            padding: 12px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px; 
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .cat-box:active .cat-img-wrapper {
+            transform: scale(0.9);
+        }
+
+        .cat-box.active .cat-img-wrapper {
+            border-color: var(--secondary);
+            background: #fff0f5 !important;
+            box-shadow: 0 6px 15px rgba(255, 0, 92, 0.1);
+        }
+        
+        .cat-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: 0.3s;
+        }
+        
+        .cat-box.active img {
+            transform: scale(1.1);
+        }
+
+        .cat-box span {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            line-height: 1.2;
+            display: block;
+        }
+
+        /* PREMIUM OFFER BANNERS */
+        .offer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 10px 20px;
+        }
+
+        .offer-card {
+            border-radius: 14px;
+            padding: 15px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            height: 95px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+
+        .offer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .offer-card::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            right: -20px;
+            bottom: -20px;
+            transition: 0.3s;
+        }
+
+        .offer-card:hover::before {
+            transform: scale(1.2);
+        }
+
+        .offer-card h3 {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 2px;
+            z-index: 2;
+        }
+
+        .offer-card p {
+            font-size: 10px;
+            font-weight: 600;
+            opacity: 0.9;
+            z-index: 2;
+        }
+
+        .offer-card .badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(5px);
+            padding: 3px 6px;
+            border-radius: 6px;
+            align-self: flex-start;
+            font-size: 8px;
+            font-weight: 800;
+            margin-top: 6px;
+            z-index: 2;
+        }
+
+        /* Product Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 0 20px 20px;
+        }
+
+        .product-card {
+            background: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 20px;
+            padding: 14px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.01);
+            transition: 0.3s;
+            animation: fadeInUp 0.5s ease-out backwards;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+            border-color: #e2e8f0;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: contain;
+            margin: 10px 0;
+            transition: 0.3s;
+        }
+
+        .product-card:hover img {
+            transform: scale(1.08);
+        }
+
+        .product-card h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 6px;
+            height: 36px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        .product-card .brand-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .product-card .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .product-card .price {
+            font-weight: 800;
+            font-size: 16px;
+            color: var(--dark);
+        }
+        
+        /* Premium Add Button */
+        .add-btn {
+            background: var(--white);
+            color: var(--secondary);
+            border: 1.5px solid var(--secondary);
+            padding: 6px 16px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(255,0,92,0.04);
+        }
+
+        .add-btn:active {
+            transform: scale(0.9);
+            background: var(--secondary);
+            color: white;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 10px 14px;
+            border-top: 1px solid var(--gray-light);
+            z-index: 1000;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.03);
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 11px;
+            transition: 0.2s;
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .nav-item:active {
+            transform: scale(0.9);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item i {
+            font-size: 22px;
+            margin-bottom: 3px;
+            display: block;
+            transition: 0.2s;
+        }
+
+        .nav-item.active i {
+            transform: translateY(-2px);
+            color: var(--primary);
+        }
+
+        /* Location Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: var(--white);
+            width: 100%;
+            max-width: 480px;
+            padding: 30px 25px;
+            border-radius: 30px 30px 0 0;
+            text-align: center;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 15px;
+            border: 1.5px solid var(--gray-light);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+
+        .modal-content input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,0,104,0.06);
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(59,0,104,0.15);
+        }
+
+        .modal-btn:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div class="top-header">
+        <div class="header-content">
+            <div class="brand-section">
+                <div class="brand-title">SEV<span>ZO</span></div>
+                <div class="location-info" onclick="openLocationModal()">
+                    <span id="disp-loc"><i class="fas fa-map-marker-alt" style="color:var(--secondary)"></i> Loading location...</span>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i>
+                </div>
+            </div>
+            
+            <div class="header-icons">
+                <div class="wallet-badge" onclick="window.location.href='account.php?tab=wallet'">
+                    <i class="fas fa-wallet"></i> ₹<span id="u-wallet">0</span>
+                </div>
+                <i class="fas fa-user-circle profile-icon" onclick="window.location.href='account.php'"></i>
+            </div>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search vegetables, snacks, drinks..." oninput="searchProducts()">
+            <i class="fas fa-search"></i>
+        </div>
+    </div>
+
+    <!-- PREMIUM IMAGE SLIDER -->
+    <div class="slider-container">
+        <div class="slider-wrapper" id="slider-wrapper">
+            <!-- Slide 1 -->
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=60&w=600');">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <span class="slide-tag">WEEKEND SALE</span>
+                    <h2 class="slide-title">50% OFF</h2>
+                    <p class="slide-desc">Fresh Organic Vegetables & Fruits. Order now!</p>
+                </div>
+            </div>
+            <!-- Slide 2 -->
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=60&w=600');">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <span class="slide-tag">FREE DELIVERY</span>
+                    <h2 class="slide-title">First 3 Orders</h2>
+                    <p class="slide-desc">Get order delivered in 15 mins for free.</p>
+                </div>
+            </div>
+            <!-- Slide 3 -->
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=60&w=600');">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <span class="slide-tag">CASHBACK</span>
+                    <h2 class="slide-title">Recharge Wallet</h2>
+                    <p class="slide-desc">Get flat ₹50 extra on recharging ₹500.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slider-dots" id="slider-dots">
+            <span class="dot active" onclick="gotoSlide(0)"></span>
+            <span class="dot" onclick="gotoSlide(1)"></span>
+            <span class="dot" onclick="gotoSlide(2)"></span>
+        </div>
+    </div>
+
+    <!-- Categories list -->
+    <div class="section-title">Shop by Category</div>
+    <div class="cat-scroll-container">
+        <div class="cat-row">
+            <div class="cat-box active" onclick="loadCategory('All', this)">
+                <div class="cat-img-wrapper" style="background:#f1f5f9;"><img src="https://cdn-icons-png.flaticon.com/512/3081/3081840.png" alt="All"></div>
+                <span>All Items</span>
+            </div>
+            <div class="cat-box" onclick="loadCategory('Fruits and Vegetables', this)">
+                <div class="cat-img-wrapper" style="background:#e8f5e9;"><img src="https://cdn-icons-png.flaticon.com/512/3194/3194591.png" alt="Veg"></div>
+                <span>Veg & Fruits</span>
+            </div>
+            <div class="cat-box" onclick="loadCategory('Grocery & Kitchen', this)">
+                <div class="cat-img-wrapper" style="background:#fff3e0;"><img src="https://cdn-icons-png.flaticon.com/512/6888/6888125.png" alt="Rice"></div>
+                <span>Rice & Atta</span>
+            </div>
+            <div class="cat-box" onclick="loadCategory('Household Essentials', this)">
+                <div class="cat-img-wrapper" style="background:#e3f2fd;"><img src="https://cdn-icons-png.flaticon.com/512/3753/3753696.png" alt="Dairy"></div>
+                <span>Dairy & Eggs</span>
+            </div>
+            <div class="cat-box" onclick="loadCategory('Snacks & Drinks', this)">
+                <div class="cat-img-wrapper" style="background:#fee2e2;"><img src="https://cdn-icons-png.flaticon.com/512/2738/2738730.png" alt="Snacks"></div>
+                <span>Snacks & Soda</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Promo Banner Grid -->
+    <div class="section-title">Exclusive Offers</div>
+    <div class="offer-grid">
+        <div class="offer-card" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="loadCategory('Fruits and Vegetables')">
+            <h3>Fresh Farm Produce</h3>
+            <p>Directly from local growers</p>
+            <span class="badge">Upto 40% Off</span>
+        </div>
+        <div class="offer-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="loadCategory('Snacks & Drinks')">
+            <h3>Party Drinks Grid</h3>
+            <p>Cool beverages & soda packs</p>
+            <span class="badge">Buy 1 Get 1</span>
+        </div>
+    </div>
+
+    <hr style="border:0; border-top:6px solid #f1f5f9; margin: 15px 0 10px;">
+
+    <!-- Products list -->
+    <div class="section-title" id="grid-title">All Products</div>
+    <div class="product-grid" id="product-container">
+        <p style="text-align:center; grid-column: span 2; color:#94a3b8; padding:30px;">
+            <i class="fas fa-spinner fa-spin" style="font-size:24px; margin-bottom:10px;"></i><br>Loading SEVZO inventory...
+        </p>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item active"><i class="fas fa-home"></i>Home</a>
+        <a href="cart.php" class="nav-item" style="position:relative;">
+            <i class="fas fa-shopping-basket"></i>Cart
+            <span id="cart-count" style="position:absolute; top:-3px; right:20px; background:var(--secondary); color:white; border-radius:50%; padding:2px 6px; font-size:9px; display:none; font-weight:bold; border:2px solid white;">0</span>
+        </a>
+        <a href="account.php?tab=orders" class="nav-item"><i class="fas fa-receipt"></i>Orders</a>
+        <a href="account.php" class="nav-item"><i class="fas fa-user-alt"></i>Account</a>
+    </div>
+
+</div>
+
+<!-- Location Modal -->
+<div id="location-modal" class="modal-overlay">
+    <div class="modal-content">
+        <i class="fas fa-map-marked-alt" style="font-size:45px; color:var(--primary); margin-bottom:15px;"></i>
+        <h2 style="margin-bottom:5px; font-weight: 800;">Choose Location</h2>
+        <p style="color:#64748b; font-size:13px; margin-bottom:20px;">Enter your delivery location details to see fresh stock available in your area.</p>
+        <input type="number" id="inp-pin" placeholder="Enter Pincode (e.g. 302001)">
+        <input type="text" id="inp-city" placeholder="Enter City (e.g. Jaipur)">
+        <button class="modal-btn" onclick="saveLocation()">Enter SEVZO Mall</button>
+        <button id="close-modal-btn" onclick="closeLocationModal()" style="display:none; margin-top:10px; background:none; border:none; color:#94a3b8; font-weight:bold; cursor:pointer; padding:5px;">Cancel</button>
+    </div>
+</div>
+
+<script>
+    let userLoc = JSON.parse(localStorage.getItem('sevzo_location'));
+    let user = JSON.parse(localStorage.getItem('quickmart_user')); // Keeping storage key same to preserve demo session
+    let cart = JSON.parse(localStorage.getItem('my_cart')) || {};
+    let globalProducts = [];
+    let currentSlide = 0;
+
+    // --- CAROUSEL SLIDER LOGIC ---
+    function gotoSlide(idx) {
+        currentSlide = idx;
+        const wrapper = document.getElementById('slider-wrapper');
+        const dots = document.getElementById('slider-dots').children;
+        
+        wrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+        
+        for (let i = 0; i < dots.length; i++) {
+            dots[i].classList.toggle('active', i === currentSlide);
+        }
+    }
+
+    // Auto rotate slides
+    setInterval(() => {
+        let nextSlide = (currentSlide + 1) % 3;
+        gotoSlide(nextSlide);
+    }, 4500);
+
+    window.onload = () => {
+        if(user) { 
+            // Sync live wallet balance
+            fetchWalletBalance();
+        }
+        updateCartBadge();
+
+        if(!userLoc) {
+            // Set default location (Jaipur 302001) for demo convenience or prompt modal
+            userLoc = { pincode: '302001', city: 'Jaipur' };
+            localStorage.setItem('sevzo_location', JSON.stringify(userLoc));
+        }
+        
+        updateLocationUI();
+        fetchProducts('All');
+    };
+
+    async function fetchWalletBalance() {
+        try {
+            const res = await fetch('get_wallet.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: user.phone })
+            });
+            const d = await res.json();
+            if(d.status === 'success') {
+                document.getElementById('u-wallet').innerText = d.wallet;
+                user.wallet = d.wallet;
+                localStorage.setItem('quickmart_user', JSON.stringify(user));
+            }
+        } catch(e) {}
+    }
+
+    function openLocationModal() {
+        document.getElementById('location-modal').style.display = 'flex';
+        document.getElementById('close-modal-btn').style.display = 'block';
+        if(userLoc) {
+            document.getElementById('inp-pin').value = userLoc.pincode;
+            document.getElementById('inp-city').value = userLoc.city;
+        }
+    }
+
+    function closeLocationModal() { 
+        document.getElementById('location-modal').style.display = 'none'; 
+    }
+
+    function saveLocation() {
+        const pin = document.getElementById('inp-pin').value;
+        const city = document.getElementById('inp-city').value;
+        if(pin.length < 6 || city.length < 2) return alert("Please enter valid pincode and city!");
+        
+        userLoc = { pincode: pin, city: city };
+        localStorage.setItem('sevzo_location', JSON.stringify(userLoc));
+        updateLocationUI();
+        closeLocationModal();
+        
+        document.getElementById('search-input').value = ""; 
+        fetchProducts('All'); 
+    }
+
+    function updateLocationUI() {
+        document.getElementById('disp-loc').innerHTML = `<i class="fas fa-map-marker-alt" style="color:var(--secondary)"></i> Delivery: ${userLoc.city} (${userLoc.pincode})`;
+    }
+
+    function loadCategory(categoryName, element) {
+        if(element) {
+            document.querySelectorAll('.cat-box').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+        } else {
+            // Find corresponding element and highlight it
+            document.querySelectorAll('.cat-box').forEach(c => {
+                const text = c.querySelector('span').innerText.toLowerCase();
+                if(text.includes(categoryName.toLowerCase()) || (categoryName === 'Fruits and Vegetables' && text.includes('veg'))) {
+                    c.classList.add('active');
+                } else {
+                    c.classList.remove('active');
+                }
+            });
+        }
+        
+        document.getElementById('search-input').value = ""; 
+        document.getElementById('grid-title').innerText = categoryName === 'All' ? 'All Products' : `Showing: ${categoryName}`;
+        document.getElementById('grid-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        fetchProducts(categoryName);
+    }
+
+    async function fetchProducts(category) {
+        document.getElementById('product-container').innerHTML = "<p style='text-align:center; grid-column:span 2; color:#94a3b8; padding:30px;'><i class='fas fa-spinner fa-spin' style='font-size:24px; margin-bottom:10px;'></i><br>Fetching SEVZO inventory...</p>";
+        const pincode = userLoc ? userLoc.pincode : '';
+        const url = `get_products.php?pincode=${pincode}&category=${encodeURIComponent(category)}`;
+        try {
+            const res = await fetch(url);
+            globalProducts = await res.json(); 
+            renderProducts(globalProducts);
+        } catch(e) {
+            document.getElementById('product-container').innerHTML = "<p style='color:red; text-align:center; grid-column:span 2;'>Network Error. Please reload page.</p>";
+        }
+    }
+
+    function searchProducts() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        if(query === "") {
+            document.getElementById('grid-title').innerText = "All Products";
+        } else {
+            document.getElementById('grid-title').innerText = `Search results for "${query}"`;
+        }
+        const filtered = globalProducts.filter(p => p.name.toLowerCase().includes(query) || (p.brand && p.brand.toLowerCase().includes(query)));
+        renderProducts(filtered);
+    }
+
+    function renderProducts(productsArray) {
+        const container = document.getElementById('product-container');
+        if(productsArray.length > 0) {
+            container.innerHTML = productsArray.map((p, i) => `
+                <div class="product-card" style="animation-delay: ${i * 0.04}s">
+                    <div onclick="window.location.href='product.php?id=${p.id}'" style="cursor:pointer; text-align:left;">
+                        <img src="${p.image_url ? p.image_url : 'https://via.placeholder.com/150?text=No+Img'}" 
+                             onerror="this.src='https://via.placeholder.com/150?text=No+Img'">
+                        <span class="brand-label">${p.brand ? p.brand : 'SEVZO Fresh'}</span>
+                        <h4>${p.name}</h4>
+                    </div>
+                    <div class="price-row">
+                        <span class="price">₹${p.price}</span>
+                        <button class="add-btn" onclick="event.stopPropagation(); addToCart(this, ${p.id})">ADD</button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = `<div style='text-align:center; grid-column:span 2; padding:40px 20px; color:#94a3b8;'>
+                <i class="fas fa-search" style="font-size:40px; color:#f1f5f9; margin-bottom:15px;"></i><br>
+                <b style="color:#64748b;">No products found</b><br>Try searching other categories.
+            </div>`;
+        }
+    }
+
+    function addToCart(btnElement, id) {
+        cart[id] = (cart[id] || 0) + 1;
+        localStorage.setItem('my_cart', JSON.stringify(cart));
+        updateCartBadge();
+        
+        if(navigator.vibrate) navigator.vibrate(40);
+        
+        const oldText = btnElement.innerText;
+        btnElement.innerText = "ADDED ✓";
+        btnElement.style.background = "var(--secondary)";
+        btnElement.style.borderColor = "var(--secondary)";
+        btnElement.style.color = "white";
+        
+        setTimeout(() => {
+            btnElement.innerText = oldText;
+            btnElement.style.background = "white";
+            btnElement.style.borderColor = "var(--secondary)";
+            btnElement.style.color = "var(--secondary)";
+        }, 800);
+    }
+
+    function updateCartBadge() {
+        let totalItems = 0;
+        for(let id in cart) totalItems += cart[id];
+        const badge = document.getElementById('cart-count');
+        if(totalItems > 0) {
+            badge.style.display = 'inline-block';
+            badge.innerText = totalItems;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
