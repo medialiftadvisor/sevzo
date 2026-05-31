@@ -45,12 +45,28 @@ try {
     $stmt->execute([$name, $phone, $total_amount, $payment_method, $delivery_pin, $lat, $lng]);
     $order_id = $pdo->lastInsertId();
 
-    // 4. Insert order items
+    // 4. Insert order items and check stock limits
     $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_name, quantity, price) VALUES (?, ?, ?, ?)");
+    $stmtStockCheck = $pdo->prepare("SELECT name, stock FROM products WHERE id = ? FOR UPDATE");
+    $stmtStockUpdate = $pdo->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
+    
     foreach ($items as $item) {
+        $p_id = isset($item['id']) ? (int)$item['id'] : 0;
         $item_name = trim($item['n']);
         $item_qty = (int)$item['q'];
         $item_price = (float)$item['p'];
+        
+        if ($p_id > 0) {
+            $stmtStockCheck->execute([$p_id]);
+            $prod = $stmtStockCheck->fetch();
+            if ($prod) {
+                if ((int)$prod['stock'] < $item_qty) {
+                    throw new \Exception("Product '" . $prod['name'] . "' only has " . $prod['stock'] . " items left in stock.");
+                }
+                $stmtStockUpdate->execute([$item_qty, $p_id]);
+            }
+        }
+        
         $stmtItem->execute([$order_id, $item_name, $item_qty, $item_price]);
     }
 

@@ -35,7 +35,24 @@ if (empty($imagesList)) {
     $imagesList[] = 'https://via.placeholder.com/250?text=No+Product+Image';
 }
 
-$mrp = Math_round_mrp($product['price']);
+$reviews = [];
+try {
+    $stmt = $pdo->prepare("SELECT * FROM product_reviews WHERE product_id = ? AND status = 'Approved' ORDER BY id DESC");
+    $stmt->execute([$productId]);
+    $reviews = $stmt->fetchAll();
+} catch (\Exception $e) {}
+
+$stock = isset($product['stock']) ? (int)$product['stock'] : 10;
+$variations = [];
+if (!empty($product['variations'])) {
+    $variations = json_decode($product['variations'], true);
+    if (!is_array($variations)) {
+        $variations = [];
+    }
+}
+
+$initialPrice = !empty($variations) ? (float)$variations[0]['price'] : (float)$product['price'];
+$mrp = Math_round_mrp($initialPrice);
 function Math_round_mrp($price) {
     return round($price * 1.15);
 }
@@ -130,6 +147,7 @@ $discount = 15; // 15% off
         .add-to-cart-btn { background: var(--secondary); color: white; border: none; padding: 16px 30px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer; flex: 1; margin-left: 20px; transition: 0.2s; box-shadow: 0 6px 15px rgba(255,0,92,0.2); }
         .add-to-cart-btn:active { transform: scale(0.96); }
         .footer-price { display: flex; flex-direction: column; }
+        .variation-chip.active { border-color: var(--secondary) !important; background: rgba(255, 0, 92, 0.04) !important; color: var(--secondary) !important; }
     </style>
 </head>
 <body>
@@ -162,22 +180,44 @@ $discount = 15; // 15% off
         </div>
  
         <div class="p-details">
-            <div class="p-rating"><i class="fas fa-star"></i> 4.8 (840 reviews)</div>
+            <div class="p-rating">
+                <i class="fas fa-star"></i> 4.8 (<?php echo count($reviews) + 12; ?> reviews)
+                <?php if ($stock <= 0): ?>
+                    <span style="background:#fee2e2; color:#ef4444; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:800; margin-left:10px;"><i class="fas fa-exclamation-triangle"></i> OUT OF STOCK</span>
+                <?php else: ?>
+                    <span style="background:#d1fae5; color:#065f46; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:800; margin-left:10px;"><i class="fas fa-check-circle"></i> IN STOCK (<?php echo $stock; ?>)</span>
+                <?php endif; ?>
+            </div>
             <h1 class="p-title"><?php echo htmlspecialchars($product['name']); ?></h1>
             <p class="p-qty">Category: <?php echo htmlspecialchars($product['category']); ?></p>
  
             <div class="price-card">
-                <span class="current-price">₹<?php echo htmlspecialchars($product['price']); ?></span>
+                <span class="current-price">₹<?php echo htmlspecialchars($initialPrice); ?></span>
                 <span class="mrp">₹<?php echo $mrp; ?></span>
                 <span class="discount-tag"><?php echo $discount; ?>% OFF</span>
                 <p style="font-size: 11px; color: #64748b; margin-top:6px; font-weight: 600;">(Inclusive of all taxes)</p>
             </div>
+
+            <?php if (!empty($variations)): ?>
+            <div style="margin-top: 15px; margin-bottom: 20px;">
+                <h3 style="font-size: 13px; font-weight: 800; color: var(--dark); margin-bottom: 8px; text-transform: uppercase;">Select Weight/Size</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;" id="variations-container">
+                    <?php foreach ($variations as $idx => $v): ?>
+                        <div class="variation-chip <?php echo $idx === 0 ? 'active' : ''; ?>" 
+                             onclick="selectVariation(this, '<?php echo htmlspecialchars($v['name']); ?>', <?php echo (float)$v['price']; ?>)"
+                             style="border: 1.5px solid #cbd5e1; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight:700; transition:0.2s; background:white;">
+                            <?php echo htmlspecialchars($v['name']); ?> - ₹<?php echo htmlspecialchars($v['price']); ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
  
             <div class="badge-row">
                 <div class="badge-box"><i class="fas fa-shipping-fast"></i> 15 Min Delivery</div>
                 <div class="badge-box"><i class="fas fa-shield-alt"></i> Quality Assured</div>
             </div>
-
+ 
             <h3 class="section-title">Product Description</h3>
             <p class="p-desc-text"><?php echo htmlspecialchars(!empty($product['description']) ? $product['description'] : 'Perfect quality fresh grocery item. Processed and packaged securely to retain high nutrient levels and premium taste.'); ?></p>
  
@@ -201,37 +241,64 @@ $discount = 15; // 15% off
                 }
                 ?>
             </div>
-
+ 
             <h3 class="section-title">Customer Reviews</h3>
-            <div class="review-card">
-                <div class="rev-header">
-                    <span class="rev-user">Rohan Sharma</span>
-                    <span class="rev-rating">★★★★★</span>
-                </div>
-                <p class="rev-text">Extremely fresh quality! Got delivered in just 10 mins. Superb service by SEVZO.</p>
-            </div>
-            <div class="review-card">
-                <div class="rev-header">
-                    <span class="rev-user">Anjali Gupta</span>
-                    <span class="rev-rating">★★★★☆</span>
-                </div>
-                <p class="rev-text">Packaging was sealed perfectly. Recommended for daily orders.</p>
+            <?php if (empty($reviews)): ?>
+                <p style="font-size:12px; color:#94a3b8; font-style:italic; margin-bottom:15px;">No reviews yet. Be the first to review this product!</p>
+            <?php else: ?>
+                <?php foreach ($reviews as $r): ?>
+                    <div class="review-card">
+                        <div class="rev-header">
+                            <span class="rev-user"><?php echo htmlspecialchars($r['customer_name']); ?></span>
+                            <span class="rev-rating" style="color: #f59e0b;"><?php echo str_repeat('★', $r['rating']) . str_repeat('☆', 5 - $r['rating']); ?></span>
+                        </div>
+                        <p class="rev-text"><?php echo htmlspecialchars($r['review_text']); ?></p>
+                        <small style="font-size:9px; color:#94a3b8;"><?php echo $r['created_at']; ?></small>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- Write a Review Form -->
+            <div style="background: white; border: 1.5px solid var(--gray-light); border-radius: 16px; padding: 20px; margin-top: 25px;">
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 12px; border-bottom: 1px solid var(--gray-light); padding-bottom: 8px;">Write a Customer Review</h3>
+                
+                <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Your Name</label>
+                <input type="text" id="rev-user-name" style="width:100%; padding:12px; margin-top:4px; margin-bottom:12px; border:1.5px solid var(--gray-light); border-radius:10px; outline: none; font-size:14px; font-weight:600; background: #f8fafc;" placeholder="John Doe">
+                
+                <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Rating</label>
+                <select id="rev-user-rating" style="width:100%; padding:12px; margin-top:4px; margin-bottom:12px; border:1.5px solid var(--gray-light); border-radius:10px; outline: none; font-size:14px; font-weight:600; background: #f8fafc;">
+                    <option value="5">★★★★★ (5 Stars)</option>
+                    <option value="4">★★★★☆ (4 Stars)</option>
+                    <option value="3">★★★☆☆ (3 Stars)</option>
+                    <option value="2">★★☆☆☆ (2 Stars)</option>
+                    <option value="1">★☆☆☆☆ (1 Star)</option>
+                </select>
+                
+                <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Review Comment</label>
+                <textarea id="rev-user-text" style="width:100%; height:80px; padding:12px; margin-top:4px; margin-bottom:15px; border:1.5px solid var(--gray-light); border-radius:10px; outline: none; font-size:14px; font-weight:600; background: #f8fafc; resize:none;" placeholder="Tell others about your experience..."></textarea>
+                
+                <button onclick="submitUserReview()" style="width:100%; padding:14px; background:var(--primary); color:white; font-weight:800; border:none; border-radius:10px; cursor:pointer;">Submit Review</button>
             </div>
         </div>
     </div>
  
     <div class="footer-action">
         <div class="footer-price">
-            <span style="font-size: 20px; font-weight: 900; color: var(--dark);">₹<?php echo htmlspecialchars($product['price']); ?></span>
+            <span style="font-size: 20px; font-weight: 900; color: var(--dark);" id="foot-price-disp">₹<?php echo htmlspecialchars($initialPrice); ?></span>
             <span style="font-size: 11px; color: var(--secondary); font-weight: 800; cursor:pointer;" onclick="window.location.href='cart.php'">VIEW BASKET</span>
         </div>
-        <button class="add-to-cart-btn" onclick="addToCart()">Add to Basket</button>
+        <button class="add-to-cart-btn" id="btn-add-to-basket" <?php echo $stock <= 0 ? 'disabled style="background:#cbd5e1; color:#94a3b8; box-shadow:none; cursor:not-allowed;"' : ''; ?> onclick="addToCart()">
+            <?php echo $stock <= 0 ? 'Out of Stock' : 'Add to Basket'; ?>
+        </button>
     </div>
 </div>
  
 <script>
     const productId = <?php echo $productId; ?>;
- 
+    let selectedVariation = "<?php echo !empty($variations) ? htmlspecialchars($variations[0]['name']) : 'default'; ?>";
+    let selectedPrice = <?php echo !empty($variations) ? (float)$variations[0]['price'] : (float)$product['price']; ?>;
+    let stockCount = <?php echo $stock; ?>;
+
     function changeGalleryImage(url, thumbElement) {
         document.getElementById('main-img').src = url;
         document.querySelectorAll('.gallery-thumb').forEach(t => {
@@ -240,9 +307,35 @@ $discount = 15; // 15% off
         thumbElement.classList.add('active');
     }
 
+    function selectVariation(el, name, price) {
+        document.querySelectorAll('.variation-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedVariation = name;
+        selectedPrice = price;
+        
+        // Update price display
+        document.querySelector('.current-price').innerText = '₹' + price;
+        document.querySelector('.mrp').innerText = '₹' + Math.round(price * 1.15);
+        document.getElementById('foot-price-disp').innerText = '₹' + price;
+    }
+
     function addToCart() {
+        if (stockCount <= 0) {
+            alert("This item is currently out of stock.");
+            return;
+        }
+        
         let cart = JSON.parse(localStorage.getItem('my_cart')) || {};
-        cart[productId] = (cart[productId] || 0) + 1;
+        let cartKey = `${productId}_${selectedVariation}`;
+        
+        // Check stock locally first
+        let currentQty = cart[cartKey] || 0;
+        if (currentQty >= stockCount) {
+            alert("Sorry, only " + stockCount + " items are available in stock.");
+            return;
+        }
+        
+        cart[cartKey] = currentQty + 1;
         localStorage.setItem('my_cart', JSON.stringify(cart));
      
         if(confirm("Item added to basket! View checkout page?")) {
@@ -250,6 +343,39 @@ $discount = 15; // 15% off
         } else {
             window.location.href = 'index.html';
         }
+    }
+
+    async function submitUserReview() {
+        const name = document.getElementById('rev-user-name').value.trim();
+        const rating = document.getElementById('rev-user-rating').value;
+        const text = document.getElementById('rev-user-text').value.trim();
+        
+        if (!name || !text) {
+            alert("Please enter your name and comment.");
+            return;
+        }
+        
+        try {
+            const res = await fetch('reviews_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'submit_review',
+                    product_id: productId,
+                    customer_name: name,
+                    rating: rating,
+                    review_text: text
+                })
+            });
+            const d = await res.json();
+            if (d.status === 'success') {
+                alert("Thank you! Your review has been published.");
+                location.reload();
+            } else {
+                alert("Error: " + d.message);
+            }
+        } catch(e) {
+            alert("Error submitting review.");
     }
 </script>
 </body>

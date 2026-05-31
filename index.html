@@ -760,6 +760,18 @@
                 <div class="cat-img-wrapper" style="background:#fee2e2;"><img src="https://cdn-icons-png.flaticon.com/512/2738/2738730.png" alt="Snacks"></div>
                 <span>Snacks & Soda</span>
             </div>
+            <div class="cat-box" onclick="loadCategory('Organic', this)">
+                <div class="cat-img-wrapper" style="background:#e8f5e9;"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917626.png" alt="Organic"></div>
+                <span>Organic Section</span>
+            </div>
+            <div class="cat-box" onclick="loadCategory('Honey', this)">
+                <div class="cat-img-wrapper" style="background:#fffde7;"><img src="https://cdn-icons-png.flaticon.com/512/2982/2982996.png" alt="Honey"></div>
+                <span>Honey</span>
+            </div>
+            <div class="cat-box" onclick="loadCategory('Pickles', this)">
+                <div class="cat-img-wrapper" style="background:#efebe9;"><img src="https://cdn-icons-png.flaticon.com/512/819/819873.png" alt="Pickles"></div>
+                <span>Pickles</span>
+            </div>
         </div>
     </div>
 
@@ -775,6 +787,23 @@
             <h3>Party Drinks Grid</h3>
             <p>Cool beverages & soda packs</p>
             <span class="badge">Buy 1 Get 1</span>
+        </div>
+    </div>
+
+    <!-- Premium Specialties Highlights -->
+    <div class="section-title">SEVZO Premium Specialties</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; padding:0 20px 15px;">
+        <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%); border: 1.5px solid #a7f3d0; border-radius:14px; padding:12px; cursor:pointer; text-align:center; transition:0.2s;" onclick="loadCategory('Organic')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <img src="https://cdn-icons-png.flaticon.com/512/2917/2917626.png" style="width:32px; height:32px; object-fit:contain; margin-bottom:5px; display:block; margin-left:auto; margin-right:auto;">
+            <h4 style="font-size:11px; font-weight:800; color:#065f46;">Organic</h4>
+        </div>
+        <div style="background:linear-gradient(135deg, #fffbeb 0%, #fffde7 100%); border: 1.5px solid #fde68a; border-radius:14px; padding:12px; cursor:pointer; text-align:center; transition:0.2s;" onclick="loadCategory('Honey')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <img src="https://cdn-icons-png.flaticon.com/512/2982/2982996.png" style="width:32px; height:32px; object-fit:contain; margin-bottom:5px; display:block; margin-left:auto; margin-right:auto;">
+            <h4 style="font-size:11px; font-weight:800; color:#92400e;">Honey</h4>
+        </div>
+        <div style="background:linear-gradient(135deg, #fdf8f6 0%, #efebe9 100%); border: 1.5px solid #fbcfe8; border-radius:14px; padding:12px; cursor:pointer; text-align:center; transition:0.2s;" onclick="loadCategory('Pickles')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+            <img src="https://cdn-icons-png.flaticon.com/512/819/819873.png" style="width:32px; height:32px; object-fit:contain; margin-bottom:5px; display:block; margin-left:auto; margin-right:auto;">
+            <h4 style="font-size:11px; font-weight:800; color:#831843;">Pickles</h4>
         </div>
     </div>
 
@@ -986,8 +1015,16 @@
     function renderProducts(productsArray) {
         const container = document.getElementById('product-container');
         if(productsArray.length > 0) {
-            container.innerHTML = productsArray.map((p, i) => `
-                <div class="product-card" style="animation-delay: ${i * 0.04}s">
+            container.innerHTML = productsArray.map((p, i) => {
+                const isOutOfStock = parseInt(p.stock) <= 0;
+                const btnHtml = isOutOfStock ? 
+                    `<button class="add-btn out-of-stock" disabled style="background:#cbd5e1; border-color:#cbd5e1; color:#94a3b8; font-size:10px; cursor:not-allowed;">OUT</button>` :
+                    `<button class="add-btn" onclick="event.stopPropagation(); addToCart(this, ${p.id})">ADD</button>`;
+                const badgeHtml = isOutOfStock ? `<span style="position:absolute; right:10px; top:10px; background:#ef4444; color:white; font-size:8px; font-weight:800; padding:2px 6px; border-radius:5px; z-index:5;">SOLD OUT</span>` : '';
+
+                return `
+                <div class="product-card" style="animation-delay: ${i * 0.04}s; position:relative;">
+                    ${badgeHtml}
                     <div onclick="window.location.href='product.php?id=${p.id}'" style="cursor:pointer; text-align:left;">
                         <img src="${p.image_url ? p.image_url : 'https://via.placeholder.com/150?text=No+Img'}" 
                              onerror="this.src='https://via.placeholder.com/150?text=No+Img'">
@@ -996,10 +1033,10 @@
                     </div>
                     <div class="price-row">
                         <span class="price">₹${p.price}</span>
-                        <button class="add-btn" onclick="event.stopPropagation(); addToCart(this, ${p.id})">ADD</button>
+                        ${btnHtml}
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         } else {
             container.innerHTML = `<div style='text-align:center; grid-column:span 2; padding:40px 20px; color:#94a3b8;'>
                 <i class="fas fa-search" style="font-size:40px; color:#f1f5f9; margin-bottom:15px;"></i><br>
@@ -1009,7 +1046,19 @@
     }
 
     function addToCart(btnElement, id) {
-        cart[id] = (cart[id] || 0) + 1;
+        const cartKey = id + '_default';
+        
+        // Verify stock limit on home page
+        const p = globalProducts.find(x => x.id == id);
+        if (p) {
+            const stock = parseInt(p.stock);
+            if ((cart[cartKey] || 0) >= stock) {
+                alert("Sorry, only " + stock + " items are available in stock.");
+                return;
+            }
+        }
+
+        cart[cartKey] = (cart[cartKey] || 0) + 1;
         localStorage.setItem('my_cart', JSON.stringify(cart));
         updateCartBadge();
         
@@ -1023,21 +1072,25 @@
         
         setTimeout(() => {
             btnElement.innerText = oldText;
-            btnElement.style.background = "white";
-            btnElement.style.borderColor = "var(--secondary)";
-            btnElement.style.color = "var(--secondary)";
+            btnElement.style.background = "";
+            btnElement.style.borderColor = "";
+            btnElement.style.color = "";
         }, 800);
     }
 
     function updateCartBadge() {
-        let totalItems = 0;
-        for(let id in cart) totalItems += cart[id];
+        let total = 0;
+        for (let key in cart) {
+            total += cart[key];
+        }
         const badge = document.getElementById('cart-count');
-        if(totalItems > 0) {
-            badge.style.display = 'inline-block';
-            badge.innerText = totalItems;
-        } else {
-            badge.style.display = 'none';
+        if(badge) {
+            if(total > 0) {
+                badge.innerText = total;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
         }
     }
 </script>

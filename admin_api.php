@@ -2,6 +2,78 @@
 header("Content-Type: application/json");
 require_once "db.php";
 
+// File upload endpoint for product images
+if (isset($_GET['upload']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
+    $target_dir = __DIR__ . "/uploads/";
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+    $file_extension = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
+    if (in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+        $filename = "img_" . time() . "_" . rand(1000, 9999) . "." . $file_extension;
+        $target_file = $target_dir . $filename;
+        if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
+            echo json_encode(["status" => "success", "url" => "uploads/" . $filename]);
+            exit;
+        }
+    }
+    echo json_encode(["status" => "error", "message" => "Failed to save uploaded image. Allowed formats: JPG, JPEG, PNG, GIF, WEBP."]);
+    exit;
+}
+
+// Bulk CSV upload endpoint
+if (isset($_GET['bulk_upload']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
+    $file = $_FILES['csv_file']['tmp_name'];
+    $handle = fopen($file, "r");
+    if ($handle !== FALSE) {
+        $header = fgetcsv($handle, 1000, ",");
+        if ($header !== FALSE) {
+            $header = array_map('strtolower', array_map('trim', $header));
+            
+            $pdo->beginTransaction();
+            $count = 0;
+            while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                if (count($row) < count($header)) continue;
+                
+                $item = array_combine($header, array_slice($row, 0, count($header)));
+                if ($item === FALSE || empty($item['name'])) continue;
+                
+                $name = trim($item['name']);
+                $price = isset($item['price']) ? (float)$item['price'] : 0.0;
+                $image_url = isset($item['image_url']) ? trim($item['image_url']) : '';
+                $images = isset($item['images']) ? trim($item['images']) : '';
+                $category = isset($item['category']) ? trim($item['category']) : 'Grocery & Kitchen';
+                $available_pincodes = isset($item['available_pincodes']) ? trim($item['available_pincodes']) : 'ALL';
+                $brand = isset($item['brand']) ? trim($item['brand']) : 'SEVZO Fresh';
+                $description = isset($item['description']) ? trim($item['description']) : '';
+                $highlights = isset($item['highlights']) ? trim($item['highlights']) : '';
+                $stock = isset($item['stock']) ? (int)$item['stock'] : 10;
+                $variations = isset($item['variations']) ? trim($item['variations']) : null;
+                
+                // Check if product exists by name
+                $stmt = $pdo->prepare("SELECT id FROM products WHERE name = ?");
+                $stmt->execute([$name]);
+                $existing = $stmt->fetch();
+                
+                if ($existing) {
+                    $stmt = $pdo->prepare("UPDATE products SET price = ?, image_url = ?, images = ?, category = ?, available_pincodes = ?, brand = ?, description = ?, highlights = ?, stock = ?, variations = ? WHERE id = ?");
+                    $stmt->execute([$price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights, $stock, $variations, $existing['id']]);
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO products (name, price, image_url, images, category, available_pincodes, brand, description, highlights, stock, variations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights, $stock, $variations]);
+                }
+                $count++;
+            }
+            $pdo->commit();
+            fclose($handle);
+            echo json_encode(["status" => "success", "message" => "Successfully imported/updated $count products!"]);
+            exit;
+        }
+    }
+    echo json_encode(["status" => "error", "message" => "Failed to read CSV file."]);
+    exit;
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (!$data || empty($data['action'])) {
@@ -95,17 +167,57 @@ try {
             $brand = isset($data['brand']) ? trim($data['brand']) : 'SEVZO Fresh';
             $description = isset($data['description']) ? trim($data['description']) : '';
             $highlights = isset($data['highlights']) ? trim($data['highlights']) : '';
+            $stock = isset($data['stock']) ? (int)$data['stock'] : 10;
+            $variations = isset($data['variations']) ? trim($data['variations']) : null;
 
             if ($id > 0) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE products SET name = ?, price = ?, image_url = ?, images = ?, category = ?, available_pincodes = ?, brand = ?, description = ?, highlights = ? WHERE id = ?");
-                $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights, $id]);
+                $stmt = $pdo->prepare("UPDATE products SET name = ?, price = ?, image_url = ?, images = ?, category = ?, available_pincodes = ?, brand = ?, description = ?, highlights = ?, stock = ?, variations = ? WHERE id = ?");
+                $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights, $stock, $variations, $id]);
             } else {
                 // Insert
-                $stmt = $pdo->prepare("INSERT INTO products (name, price, image_url, images, category, available_pincodes, brand, description, highlights) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights]);
+                $stmt = $pdo->prepare("INSERT INTO products (name, price, image_url, images, category, available_pincodes, brand, description, highlights, stock, variations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $price, $image_url, $images, $category, $available_pincodes, $brand, $description, $highlights, $stock, $variations]);
             }
             echo json_encode(["status" => "success", "message" => "Product saved successfully."]);
+            break;
+
+        case 'get_reviews':
+            $stmt = $pdo->query("SELECT r.*, p.name as product_name FROM product_reviews r JOIN products p ON r.product_id = p.id ORDER BY r.id DESC");
+            $reviews = $stmt->fetchAll();
+            echo json_encode(["status" => "success", "reviews" => $reviews]);
+            break;
+
+        case 'save_review':
+            $id = (int)$data['id'];
+            $product_id = (int)$data['product_id'];
+            $customer_name = trim($data['customer_name']);
+            $rating = (int)$data['rating'];
+            $review_text = trim($data['review_text']);
+            $status = trim($data['status']);
+            
+            if ($id > 0) {
+                $stmt = $pdo->prepare("UPDATE product_reviews SET product_id = ?, customer_name = ?, rating = ?, review_text = ?, status = ? WHERE id = ?");
+                $stmt->execute([$product_id, $customer_name, $rating, $review_text, $status, $id]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO product_reviews (product_id, customer_name, rating, review_text, status) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$product_id, $customer_name, $rating, $review_text, $status]);
+            }
+            echo json_encode(["status" => "success", "message" => "Review saved successfully."]);
+            break;
+
+        case 'approve_review':
+            $id = (int)$data['id'];
+            $stmt = $pdo->prepare("UPDATE product_reviews SET status = 'Approved' WHERE id = ?");
+            $stmt->execute([$id]);
+            echo json_encode(["status" => "success", "message" => "Review approved successfully."]);
+            break;
+
+        case 'delete_review':
+            $id = (int)$data['id'];
+            $stmt = $pdo->prepare("DELETE FROM product_reviews WHERE id = ?");
+            $stmt->execute([$id]);
+            echo json_encode(["status" => "success", "message" => "Review deleted successfully."]);
             break;
 
         case 'update_wallet':

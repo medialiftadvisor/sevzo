@@ -39,6 +39,27 @@ try {
      } catch (\Exception $e) {}
      
      try {
+         $pdo->exec("ALTER TABLE `products` ADD COLUMN `stock` INT DEFAULT 10 AFTER `highlights`;");
+     } catch (\Exception $e) {}
+     
+     try {
+         $pdo->exec("ALTER TABLE `products` ADD COLUMN `variations` TEXT DEFAULT NULL AFTER `stock`;");
+     } catch (\Exception $e) {}
+     
+     try {
+         $pdo->exec("CREATE TABLE IF NOT EXISTS `product_reviews` (
+             `id` INT AUTO_INCREMENT PRIMARY KEY,
+             `product_id` INT NOT NULL,
+             `customer_name` VARCHAR(100) NOT NULL,
+             `rating` INT NOT NULL,
+             `review_text` TEXT NOT NULL,
+             `status` VARCHAR(20) DEFAULT 'Approved',
+             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+             FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+     } catch (\Exception $e) {}
+     
+     try {
          $pdo->exec("ALTER TABLE `orders` ADD COLUMN `delivery_proof` LONGTEXT DEFAULT NULL AFTER `delivery_partner_id`;");
      } catch (\Exception $e) {}
 } catch (\PDOException $e) {

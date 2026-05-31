@@ -159,6 +159,7 @@
     <div class="nav-link" onclick="switchTab('products')"><i class="fas fa-box"></i> Inventory</div>
     <div class="nav-link" onclick="switchTab('users')"><i class="fas fa-users"></i> Customers</div>
     <div class="nav-link" onclick="switchTab('riders')"><i class="fas fa-motorcycle"></i> Riders</div>
+    <div class="nav-link" onclick="switchTab('reviews')"><i class="fas fa-star"></i> Reviews</div>
 </div>
 
 <div class="main">
@@ -210,6 +211,7 @@
     let globalRiders = [];
     let globalUsers = [];
     let globalProducts = [];
+    let globalReviews = [];
 
     // Session Check
     if (localStorage.getItem('sevzo_admin_logged') === 'true') {
@@ -282,6 +284,11 @@
     }
 
     async function fetchData(tab) {
+        if (tab === 'reviews' && globalProducts.length === 0) {
+            const pData = await req('get_products');
+            globalProducts = pData.products;
+        }
+
         const d = await req('get_' + tab);
         const table = document.getElementById('main-table');
         const btnBox = document.getElementById('action-btn-container');
@@ -289,13 +296,20 @@
 
         if(tab === 'products') {
             globalProducts = d.products;
-            btnBox.innerHTML = `<button class="btn btn-add" onclick="openProductModal(0)">+ Add New Product</button>`;
-            table.innerHTML = `<tr><th>Img</th><th>Name</th><th>Category</th><th>Price</th><th>Brand</th><th>Action</th></tr>` + 
+            btnBox.innerHTML = `
+                <button class="btn btn-add" onclick="openProductModal(0)" style="margin-right:10px;">+ Add New Product</button>
+                <button class="btn" style="background:#f59e0b; color:white; margin-bottom:18px;" onclick="document.getElementById('csv-file-input').click()">
+                    <i class="fas fa-file-csv"></i> Bulk CSV Upload
+                </button>
+                <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="uploadBulkCSV(event)">
+            `;
+            table.innerHTML = `<tr><th>Img</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Brand</th><th>Action</th></tr>` + 
             d.products.map(p => `<tr>
                 <td><img src="${p.image_url}" width="35" height="35" style="object-fit:contain; border-radius:6px;"></td>
                 <td><b>${p.name}</b></td>
                 <td><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:5px; font-size:11px;">${p.category}</span></td>
                 <td>₹${p.price}</td>
+                <td><span style="background:${parseInt(p.stock) <= 0 ? '#fee2e2':'#d1fae5'}; color:${parseInt(p.stock) <= 0 ? '#991b1b':'#065f46'}; padding:2px 6px; border-radius:4px; font-size:11px;">${p.stock} Qty</span></td>
                 <td>${p.brand ? p.brand : 'SEVZO'}</td>
                 <td>
                     <button class="btn btn-edit" onclick='openProductModal(${p.id})'>Edit</button>
@@ -305,7 +319,6 @@
         }
         if(tab === 'orders') {
             globalOrders = d.orders;
-            // Fetch riders to populate assignment dropdowns
             const rData = await req('get_riders');
             globalRiders = rData.riders;
 
@@ -357,6 +370,27 @@
                 <td>${r.is_online==1 ? 'Live GPS enabled' : 'Not tracked'}</td>
             </tr>`).join('');
         }
+        if(tab === 'reviews') {
+            globalReviews = d.reviews;
+            btnBox.innerHTML = `<button class="btn btn-add" onclick="openReviewModal(0)">+ Add New Review</button>`;
+            table.innerHTML = `<tr><th>Product</th><th>Customer</th><th>Rating</th><th>Comment</th><th>Status</th><th>Action</th></tr>` + 
+            d.reviews.map(r => `<tr>
+                <td><b>${r.product_name}</b><br><small style="color:#64748b;">ID: ${r.product_id}</small></td>
+                <td><b>${r.customer_name}</b></td>
+                <td><span style="color:#f59e0b; font-weight:800;">${'★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)}</span></td>
+                <td><small>${r.review_text}</small></td>
+                <td>
+                    <span style="background:${r.status==='Approved'?'#d1fae5':'#fee2e2'}; color:${r.status==='Approved'?'#065f46':'#991b1b'}; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:800;">
+                        ${r.status}
+                    </span>
+                </td>
+                <td>
+                    ${r.status !== 'Approved' ? `<button class="btn btn-edit" style="background:#10b981; margin-bottom:4px;" onclick="approveReview(${r.id})">Approve</button><br>` : ''}
+                    <button class="btn btn-edit" onclick="openReviewModal(${r.id})">Edit</button>
+                    <button class="btn btn-del" onclick="deleteReview(${r.id})">Del</button>
+                </td>
+            </tr>`).join('');
+        }
     }
 
     function openProductModal(id) {
@@ -367,20 +401,37 @@
         document.getElementById('modal-body').innerHTML = `
             <label>Product Name</label><input type="text" id="m-name" class="input-box" value="${p?p.name:''}">
             <label>Price (₹)</label><input type="number" id="m-price" class="input-box" value="${p?p.price:''}">
-            <label>Image URL</label><input type="text" id="m-img" class="input-box" value="${p?p.image_url:''}">
-            <label>Gallery Image URLs (Separated by semicolon ';')</label><input type="text" id="m-images" class="input-box" placeholder="url1; url2; url3" value="${p && p.images ? p.images : ''}">
+            
+            <label>Image URL</label>
+            <div style="display:flex; gap:10px; margin-top:4px; margin-bottom:12px;">
+                <input type="text" id="m-img" class="input-box" style="margin-top:0; margin-bottom:0; flex:1;" value="${p?p.image_url:''}">
+                <button class="btn" style="background:var(--primary); color:white; padding: 0 15px;" onclick="document.getElementById('product-file-upload').setAttribute('data-target', 'm-img'); document.getElementById('product-file-upload').click()">Upload</button>
+            </div>
+            
+            <label>Gallery Image URLs (Separated by semicolon ';')</label>
+            <div style="display:flex; gap:10px; margin-top:4px; margin-bottom:12px;">
+                <input type="text" id="m-images" class="input-box" style="margin-top:0; margin-bottom:0; flex:1;" placeholder="url1; url2; url3" value="${p && p.images ? p.images : ''}">
+                <button class="btn" style="background:var(--primary); color:white; padding: 0 15px;" onclick="document.getElementById('product-file-upload').setAttribute('data-target', 'm-images'); document.getElementById('product-file-upload').click()">Upload Appended</button>
+            </div>
+
             <label>Category</label>
             <select id="m-cat" class="input-box">
                 <option value="Fruits and Vegetables" ${p && p.category=='Fruits and Vegetables'?'selected':''}>Fruits & Veggies</option>
                 <option value="Grocery & Kitchen" ${p && p.category=='Grocery & Kitchen'?'selected':''}>Grocery & Kitchen</option>
                 <option value="Household Essentials" ${p && p.category=='Household Essentials'?'selected':''}>Dairy & Household</option>
                 <option value="Snacks & Drinks" ${p && p.category=='Snacks & Drinks'?'selected':''}>Snacks & Drinks</option>
+                <option value="Organic" ${p && p.category=='Organic'?'selected':''}>Organic Section</option>
+                <option value="Honey" ${p && p.category=='Honey'?'selected':''}>Honey</option>
+                <option value="Pickles" ${p && p.category=='Pickles'?'selected':''}>Pickles</option>
             </select>
             <label>Available Pincodes (Comma separated, or ALL)</label>
             <input type="text" id="m-pin" class="input-box" value="${p?p.available_pincodes:'ALL'}">
             <label>Brand Name</label><input type="text" id="m-brand" class="input-box" value="${p && p.brand ? p.brand : 'SEVZO Fresh'}">
             <label>Product Description</label><textarea id="m-desc" class="input-box" style="height:80px; resize:none;">${p && p.description ? p.description : ''}</textarea>
             <label>Highlights (Separated by semicolon ';')</label><input type="text" id="m-highlights" class="input-box" placeholder="Direct from farm; Rich in nutrients" value="${p && p.highlights ? p.highlights : ''}">
+            <label>Stock Quantity</label><input type="number" id="m-stock" class="input-box" value="${p?p.stock:'10'}">
+            <label>Variations JSON (e.g. [{"name":"500g","price":100},{"name":"1kg","price":180}])</label>
+            <textarea id="m-vars" class="input-box" style="height:60px; resize:none;" placeholder='[{"name":"500g","price":100}]'>${p && p.variations ? p.variations : ''}</textarea>
         `;
     }
 
@@ -428,7 +479,9 @@
                 available_pincodes: document.getElementById('m-pin').value,
                 brand: document.getElementById('m-brand').value,
                 description: document.getElementById('m-desc').value,
-                highlights: document.getElementById('m-highlights').value
+                highlights: document.getElementById('m-highlights').value,
+                stock: document.getElementById('m-stock').value,
+                variations: document.getElementById('m-vars').value
             });
         } else if(currentTab === 'users') {
             res = await req('save_user', {
@@ -437,6 +490,15 @@
                 phone: document.getElementById('m-u-phone').value,
                 password: document.getElementById('m-u-pass').value,
                 wallet: document.getElementById('m-u-wallet').value
+            });
+        } else if(currentTab === 'reviews') {
+            res = await req('save_review', {
+                id: editId,
+                product_id: document.getElementById('m-rev-pid').value,
+                customer_name: document.getElementById('m-rev-name').value,
+                rating: document.getElementById('m-rev-rating').value,
+                review_text: document.getElementById('m-rev-text').value,
+                status: document.getElementById('m-rev-status').value
             });
         }
         if(res && res.status === 'success') { 
@@ -476,6 +538,123 @@
     }
     
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    // Image Upload helper
+    async function uploadProductImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const targetId = event.target.getAttribute('data-target');
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        try {
+            const res = await fetch('admin_api.php?upload=1', {
+                method: 'POST',
+                body: formData
+            });
+            const d = await res.json();
+            if (d.status === 'success') {
+                const targetInput = document.getElementById(targetId);
+                if (targetId === 'm-images') {
+                    if (targetInput.value) {
+                        targetInput.value += ';' + d.url;
+                    } else {
+                        targetInput.value = d.url;
+                    }
+                } else {
+                    targetInput.value = d.url;
+                }
+                alert("Image uploaded successfully!");
+            } else {
+                alert("Upload failed: " + d.message);
+            }
+        } catch (e) {
+            alert("Error uploading image.");
+        }
+        // Clear file input
+        event.target.value = '';
+    }
+
+    // CSV Bulk Upload helper
+    async function uploadBulkCSV(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('csv_file', file);
+        
+        try {
+            const res = await fetch('admin_api.php?bulk_upload=1', {
+                method: 'POST',
+                body: formData
+            });
+            const d = await res.json();
+            if (d.status === 'success') {
+                alert(d.message);
+                fetchData(currentTab);
+            } else {
+                alert("Upload failed: " + d.message);
+            }
+        } catch(e) {
+            alert("Error uploading CSV.");
+        }
+        // Clear file input
+        event.target.value = '';
+    }
+
+    // Reviews Moderation helpers
+    function openReviewModal(id) {
+        editId = id;
+        const r = id > 0 ? globalReviews.find(x => x.id == id) : null;
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('modal-title').innerText = r ? "Edit Product Review" : "Add Product Review";
+        
+        const productOptions = globalProducts.map(p => `<option value="${p.id}" ${r && r.product_id == p.id ? 'selected' : ''}>${p.name} (ID: ${p.id})</option>`).join('');
+        
+        document.getElementById('modal-body').innerHTML = `
+            <label>Product</label>
+            <select id="m-rev-pid" class="input-box">
+                ${productOptions}
+            </select>
+            <label>Customer Name</label><input type="text" id="m-rev-name" class="input-box" value="${r ? r.customer_name : ''}">
+            <label>Rating (1 to 5 Stars)</label>
+            <select id="m-rev-rating" class="input-box">
+                <option value="5" ${r && r.rating == 5 ? 'selected' : ''}>5 Stars</option>
+                <option value="4" ${r && r.rating == 4 ? 'selected' : ''}>4 Stars</option>
+                <option value="3" ${r && r.rating == 3 ? 'selected' : ''}>3 Stars</option>
+                <option value="2" ${r && r.rating == 2 ? 'selected' : ''}>2 Stars</option>
+                <option value="1" ${r && r.rating == 1 ? 'selected' : ''}>1 Star</option>
+            </select>
+            <label>Review Comment</label>
+            <textarea id="m-rev-text" class="input-box" style="height:80px; resize:none;">${r ? r.review_text : ''}</textarea>
+            <label>Status</label>
+            <select id="m-rev-status" class="input-box">
+                <option value="Approved" ${r && r.status == 'Approved' ? 'selected' : ''}>Approved</option>
+                <option value="Pending" ${r && r.status == 'Pending' ? 'selected' : ''}>Pending</option>
+            </select>
+        `;
+    }
+    
+    async function approveReview(id) {
+        const res = await req('approve_review', { id: id });
+        if(res.status === 'success') {
+            fetchData('reviews');
+        } else {
+            alert("Error: " + res.message);
+        }
+    }
+    
+    async function deleteReview(id) {
+        if(confirm("Are you sure you want to delete this review?")) {
+            const res = await req('delete_review', { id: id });
+            if(res.status === 'success') {
+                fetchData('reviews');
+            } else {
+                alert("Error: " + res.message);
+            }
+        }
+    }
     
     window.onload = () => {
         if (localStorage.getItem('sevzo_admin_logged') === 'true') {
@@ -483,5 +662,9 @@
         }
     };
 </script>
+
+<!-- Hidden inputs for file upload actions -->
+<input type="file" id="product-file-upload" accept="image/*" style="display:none" onchange="uploadProductImage(event)">
+
 </body>
 </html>

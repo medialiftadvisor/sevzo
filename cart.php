@@ -375,21 +375,38 @@
             document.querySelector('.footer').style.display = 'flex';
         }
 
-        for(let id in cart) {
+        for(let key in cart) {
+            let pts = key.split('_');
+            let id = pts[0];
+            let variation = pts[1] || 'default';
             let p = products.find(x => x.id == id);
+            
             if(p) {
-                let itemTotal = parseFloat(p.price) * cart[id];
+                let price = parseFloat(p.price);
+                let displayName = p.name;
+                if(variation && variation !== 'default') {
+                    try {
+                        let vars = JSON.parse(p.variations);
+                        let match = vars.find(v => v.name === variation);
+                        if(match) {
+                            price = parseFloat(match.price);
+                            displayName = `${p.name} (${variation})`;
+                        }
+                    } catch(e) {}
+                }
+
+                let itemTotal = price * cart[key];
                 subtotal += itemTotal;
                 html += `
                 <div class="cart-item">
                     <div class="item-info">
-                        <h5>${p.name}</h5>
-                        <p>₹${p.price}</p>
+                        <h5>${displayName}</h5>
+                        <p>₹${price}</p>
                     </div>
                     <div class="qty-box">
-                        <span onclick="updateQty(${id}, -1)">−</span>
-                        <span>${cart[id]}</span>
-                        <span onclick="updateQty(${id}, 1)">+</span>
+                        <span onclick="updateQty('${key}', -1)">−</span>
+                        <span>${cart[key]}</span>
+                        <span onclick="updateQty('${key}', 1)">+</span>
                     </div>
                 </div>`;
             }
@@ -409,9 +426,21 @@
         checkWalletSufficiency();
     }
 
-    function updateQty(id, chg) {
-        cart[id] = (cart[id] || 0) + chg;
-        if(cart[id] <= 0) delete cart[id];
+    function updateQty(key, chg) {
+        let pts = key.split('_');
+        let id = pts[0];
+        let p = products.find(x => x.id == id);
+        
+        if (p && chg > 0) {
+            let stock = parseInt(p.stock);
+            if ((cart[key] || 0) + chg > stock) {
+                alert("Sorry, only " + stock + " items are available in stock.");
+                return;
+            }
+        }
+
+        cart[key] = (cart[key] || 0) + chg;
+        if(cart[key] <= 0) delete cart[key];
         localStorage.setItem('my_cart', JSON.stringify(cart));
         renderCart();
     }
@@ -459,9 +488,26 @@
         btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Placing Order...`;
 
         const orderItems = [];
-        for(let id in cart) {
+        for(let key in cart) {
+            let pts = key.split('_');
+            let id = pts[0];
+            let variation = pts[1] || 'default';
             let p = products.find(x => x.id == id);
-            if(p) orderItems.push({ n: p.name, q: cart[id], p: p.price });
+            if(p) {
+                let price = parseFloat(p.price);
+                let displayName = p.name;
+                if(variation && variation !== 'default') {
+                    try {
+                        let vars = JSON.parse(p.variations);
+                        let match = vars.find(v => v.name === variation);
+                        if(match) {
+                            price = parseFloat(match.price);
+                            displayName = `${p.name} (${variation})`;
+                        }
+                    } catch(e) {}
+                }
+                orderItems.push({ id: parseInt(id), n: displayName, q: cart[key], p: price });
+            }
         }
 
         const payload = {
